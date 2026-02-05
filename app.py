@@ -362,13 +362,18 @@ def send_payment_email(to_email: str):
         )
     )
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as smtp:
             smtp.login(EMAIL_USER, EMAIL_APP_PASSWORD)
             smtp.send_message(msg)
         return True
     except Exception as exc:
         print(f"EMAIL ERROR: {exc}", file=sys.stderr)
         return False
+
+
+def send_payment_email_async(to_email: str):
+    thread = threading.Thread(target=send_payment_email, args=(to_email,), daemon=True)
+    thread.start()
 
 
 @app.after_request
@@ -691,11 +696,8 @@ def create_checkout_session():
             # Simulated payment flow: send email confirmation and go to success page
             lang = get_lang()
             email = request.form.get("email")
-            ok = False
             if email:
-                ok = send_payment_email(email)
-            if not ok:
-                print("EMAIL ERROR: failed to send confirmation", file=sys.stderr)
+                send_payment_email_async(email)
             return redirect(url_for("checkout_success", lang=lang))
         stripe.api_key = STRIPE_SECRET_KEY
         lang = get_lang()
