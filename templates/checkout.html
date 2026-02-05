@@ -1,0 +1,44 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<main class="main">
+  <section class="checkout" data-reveal>
+    <div class="section-head">
+      <h2>{{ t.checkout }}</h2>
+      <p>{{ "Fast, secure checkout you can trust." if lang == 'en' else "دفع سريع وآمن بكل ثقة." }}</p>
+    </div>
+
+    {% if items %}
+    <div class="checkout-grid">
+      <form class="checkout-form" method="post" action="{{ url_for('create_checkout_session', lang=lang) }}">
+        <label class="field">
+          {{ t.email }}
+          <input name="email" type="email" required placeholder="you@example.com" />
+        </label>
+        <button class="btn" type="submit">{{ t.pay_now }}</button>
+        <div class="pay-row">
+          <span>Visa</span>
+          <span>Mastercard</span>
+          <span>Apple Pay</span>
+          <span>PayPal</span>
+        </div>
+      </form>
+      <div class="cart-summary">
+        {% for entry in items %}
+        <div class="summary-line">
+          <span>{{ entry.product['name_' + lang] }} x{{ entry.qty }}</span>
+          <strong>{{ "${:,.2f}".format(entry.line_total / 100) }}</strong>
+        </div>
+        {% endfor %}
+        <div class="summary-total">
+          <span>{{ t.total }}</span>
+          <strong>{{ "${:,.2f}".format(total_cents / 100) }}</strong>
+        </div>
+      </div>
+    </div>
+    {% else %}
+      <p class="empty">{{ t.empty_cart }}</p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

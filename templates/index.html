@@ -1,0 +1,83 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<main class="main" id="home">
+  <section class="hero" data-reveal>
+    <div class="hero-text">
+      <p class="eyebrow">{{ t.featured }}</p>
+      <h1>{{ t.tagline }}</h1>
+      <p class="lead">
+        {{ "Clean design, honest materials, and gear that feels good to use every day." if lang == 'en' else "تصميم نظيف وخامات صادقة وقطع تحسّها مريحة في الاستخدام اليومي." }}
+      </p>
+      <div class="hero-actions">
+        <a class="btn" href="#products">{{ t.cta }}</a>
+        <a class="btn ghost" href="#story">{{ t.nav_story }}</a>
+      </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="ring"></div>
+      <div class="orb"></div>
+      <div class="cards">
+        <div class="mini-card"></div>
+        <div class="mini-card"></div>
+        <div class="mini-card"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="products" id="products">
+    <div class="section-head" data-reveal>
+      <h2>{{ t.products }}</h2>
+      <p>{{ "A small, practical lineup picked for real life." if lang == 'en' else "تشكيلة عملية مختارة لاحتياجات يومك." }}</p>
+    </div>
+    <div class="product-grid">
+      {% for product in products %}
+      <article class="product-card" data-reveal>
+        <div class="product-media">
+          <img src="{{ product.image }}" alt="{{ product['name_' + lang] }}" />
+          <span class="badge">{{ product['badge_' + lang] }}</span>
+        </div>
+        <div class="product-info">
+          <h3>{{ product['name_' + lang] }}</h3>
+          <p>{{ product['description_' + lang] }}</p>
+          <div class="product-meta">
+            <span>{{ "${:,.2f}".format(product.price_cents / 100) }}</span>
+            <div class="actions">
+              <a class="ghost" href="{{ url_for('product', pid=product.id, lang=lang) }}">{{ t.view }}</a>
+              <button class="btn" data-add-to-cart="{{ product.id }}">{{ t.add_to_cart }}</button>
+            </div>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="story" id="story" data-reveal>
+    <div>
+      <h2>{{ "Made for long days" if lang == 'en' else "مصمم لأيامك الطويلة" }}</h2>
+      <p>
+        {{ "We focus on comfort, reliability, and the little details that make daily use easier." if lang == 'en'
+           else "نركز على الراحة والاعتمادية والتفاصيل الصغيرة التي تسهّل الاستخدام اليومي." }}
+      </p>
+    </div>
+    <div class="story-panels">
+      <div class="panel"></div>
+      <div class="panel"></div>
+      <div class="panel"></div>
+    </div>
+  </section>
+
+  <section class="newsletter" data-reveal>
+    <div>
+      <h2>{{ t.newsletter_title }}</h2>
+      <p>{{ t.newsletter_text }}</p>
+    </div>
+    <form class="newsletter-form">
+      <input type="email" placeholder="{{ t.email }}" />
+      <button class="btn" type="button">{{ t.subscribe }}</button>
+    </form>
+  </section>
+</main>
+{% endblock %}
+

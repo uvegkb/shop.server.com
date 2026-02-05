@@ -1,0 +1,4 @@
+Flask==3.0.2
+stripe==9.13.0
+flask
+gunicorn

@@ -1,0 +1,51 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<main class="main">
+  <section class="cart" data-reveal>
+    <div class="section-head">
+      <h2>{{ t.cart }}</h2>
+      <p>{{ "Quick review before you place the order." if lang == 'en' else "راجع مشترياتك بسرعة قبل إتمام الطلب." }}</p>
+    </div>
+
+    {% if items %}
+    <div class="cart-grid">
+      <div class="cart-items">
+        {% for entry in items %}
+        <div class="cart-item">
+          <img src="{{ entry.product.image }}" alt="{{ entry.product['name_' + lang] }}" />
+          <div>
+            <h4>{{ entry.product['name_' + lang] }}</h4>
+            <span>{{ "${:,.2f}".format(entry.product.price_cents / 100) }}</span>
+          </div>
+          <div class="cart-actions">
+            <span>x{{ entry.qty }}</span>
+            <button class="ghost" data-remove-from-cart="{{ entry.product.id }}">{{ "Remove" if lang == 'en' else "إزالة" }}</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="cart-summary">
+        <div class="summary-line">
+          <span>{{ t.subtotal }}</span>
+          <strong>{{ "${:,.2f}".format(total_cents / 100) }}</strong>
+        </div>
+        <div class="summary-line">
+          <span>{{ t.shipping }}</span>
+          <strong>{{ "Free" if lang == 'en' else "بدون رسوم" }}</strong>
+        </div>
+        <div class="summary-total">
+          <span>{{ t.total }}</span>
+          <strong>{{ "${:,.2f}".format(total_cents / 100) }}</strong>
+        </div>
+        <a class="btn" href="{{ url_for('checkout', lang=lang) }}">{{ t.checkout }}</a>
+      </div>
+    </div>
+    {% else %}
+      <p class="empty">{{ t.empty_cart }}</p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}
+
+

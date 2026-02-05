@@ -1,0 +1,15 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<main class="main">
+  <section class="status" data-reveal>
+    <div class="status-card">
+      <h2>{{ t.cancel }}</h2>
+      <p>{{ "No worries — try again whenever you're ready." if lang == 'en' else "ولا يهمك — ارجع وجرّب وقت ما تحب." }}</p>
+      <a class="btn" href="{{ url_for('index', lang=lang) }}">{{ t.back }}</a>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+

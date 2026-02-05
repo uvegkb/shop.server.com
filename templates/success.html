@@ -1,0 +1,15 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<main class="main">
+  <section class="status" data-reveal>
+    <div class="status-card">
+      <h2>{{ t.success }}</h2>
+      <p>{{ "Thanks! We got your order and will send an update soon." if lang == 'en' else "شكرًا لك! طلبك وصلنا، وبنرسلك تحديث قريبًا." }}</p>
+      <a class="btn" href="{{ url_for('index', lang=lang) }}">{{ t.back }}</a>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+

@@ -1,0 +1,75 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<main class="main">
+  <section class="product-detail" data-reveal>
+    <div class="detail-media">
+      <img src="{{ product.image }}" alt="{{ product['name_' + lang] }}" />
+    </div>
+    <div class="detail-info">
+      <span class="badge">{{ product['badge_' + lang] }}</span>
+      <h1>{{ product['name_' + lang] }}</h1>
+      <p>{{ product['description_' + lang] }}</p>
+      <div class="detail-meta">
+        <span class="price">{{ "${:,.2f}".format(product.price_cents / 100) }}</span>
+        <button class="btn" data-add-to-cart="{{ product.id }}">{{ t.add_to_cart }}</button>
+      </div>
+      <div class="detail-panel">
+        <h4>{{ t.details }}</h4>
+        <ul>
+          <li>{{ "High-fidelity materials" if lang == 'en' else "خامات عالية الجودة" }}</li>
+          <li>{{ "2-year warranty" if lang == 'en' else "ضمان سنتين" }}</li>
+          <li>{{ "Worldwide shipping" if lang == 'en' else "شحن عالمي" }}</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="comments" data-reveal>
+    <div class="section-head">
+      <h2>{{ t.comments }}</h2>
+      <p>{{ "Tell us what you think about this item." if lang == 'en' else "قول لنا رأيك عن هذا المنتج." }}</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert">
+          {% for category, message in messages %}
+            <p class="{{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form class="comment-form" method="post" action="{{ url_for('add_comment', pid=product.id, lang=lang) }}">
+      <input name="author" placeholder="{{ t.name }}" required />
+      <textarea name="content" rows="4" placeholder="{{ t.comment }}" required></textarea>
+      <button class="btn" type="submit">{{ t.add_comment }}</button>
+    </form>
+
+    <div class="comment-list">
+      {% for c in comments %}
+        <div class="comment-card">
+          <div class="comment-meta">
+            <strong>{{ c.author }}</strong>
+            <span>{{ c.created_at[:10] }}</span>
+          </div>
+          <p>{{ c.content }}</p>
+          {% if c.session_id == can_edit_sid %}
+          <form class="comment-edit" method="post" action="{{ url_for('edit_comment', cid=c.id, lang=lang) }}">
+            <input type="hidden" name="product_id" value="{{ product.id }}" />
+            <textarea name="content" rows="3">{{ c.content }}</textarea>
+            <div class="comment-actions">
+              <button class="ghost" type="submit">{{ t.save }}</button>
+              <button class="ghost danger" type="submit" formaction="{{ url_for('delete_comment', cid=c.id, lang=lang) }}">{{ t.delete }}</button>
+            </div>
+          </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+
