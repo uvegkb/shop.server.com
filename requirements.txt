@@ -1,4 +1,3 @@
 Flask==3.0.2
 stripe>=10.0.0
-flask
-gunicorn
+gunicorn==21.2.0
