@@ -697,59 +697,58 @@ def create_checkout_session():
             if not ok:
                 print("EMAIL ERROR: failed to send confirmation", file=sys.stderr)
             return redirect(url_for("checkout_success", lang=lang))
+        stripe.api_key = STRIPE_SECRET_KEY
+        lang = get_lang()
+        email = request.form.get("email")
+        items, total_cents = cart_items()
 
-    stripe.api_key = STRIPE_SECRET_KEY
-    lang = get_lang()
-    email = request.form.get("email")
-    items, total_cents = cart_items()
+        if not items:
+            return redirect(url_for("cart", lang=lang))
 
-    if not items:
-        return redirect(url_for("cart", lang=lang))
-
-    line_items = []
-    for entry in items:
-        product = entry["product"]
-        line_items.append(
-            {
-                "price_data": {
-                    "currency": CURRENCY.lower(),
-                    "product_data": {
-                        "name": product["name_en"],
+        line_items = []
+        for entry in items:
+            product = entry["product"]
+            line_items.append(
+                {
+                    "price_data": {
+                        "currency": CURRENCY.lower(),
+                        "product_data": {
+                            "name": product["name_en"],
+                        },
+                        "unit_amount": product["price_cents"],
                     },
-                    "unit_amount": product["price_cents"],
-                },
-                "quantity": entry["qty"],
-            }
-        )
+                    "quantity": entry["qty"],
+                }
+            )
 
         session_obj = stripe.checkout.Session.create(
-        mode="payment",
-        line_items=line_items,
-        customer_email=email,
-        success_url=url_for("checkout_success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}&lang=" + lang,
-        cancel_url=url_for("checkout_cancel", _external=True) + "?lang=" + lang,
+            mode="payment",
+            line_items=line_items,
+            customer_email=email,
+            success_url=url_for("checkout_success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}&lang=" + lang,
+            cancel_url=url_for("checkout_cancel", _external=True) + "?lang=" + lang,
         )
 
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO orders (email, total_cents, currency, status, stripe_session_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (email, total_cents, CURRENCY, "pending", session_obj.id, datetime.utcnow().isoformat()),
-    )
-    order_id = cur.lastrowid
-    for entry in items:
+        conn = get_db()
+        cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO order_items (order_id, product_id, quantity, price_cents)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO orders (email, total_cents, currency, status, stripe_session_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (order_id, entry["product"]["id"], entry["qty"], entry["product"]["price_cents"]),
+            (email, total_cents, CURRENCY, "pending", session_obj.id, datetime.utcnow().isoformat()),
         )
-    conn.commit()
-    conn.close()
+        order_id = cur.lastrowid
+        for entry in items:
+            cur.execute(
+                """
+                INSERT INTO order_items (order_id, product_id, quantity, price_cents)
+                VALUES (?, ?, ?, ?)
+                """,
+                (order_id, entry["product"]["id"], entry["qty"], entry["product"]["price_cents"]),
+            )
+        conn.commit()
+        conn.close()
 
         return redirect(session_obj.url)
     except Exception as exc:
