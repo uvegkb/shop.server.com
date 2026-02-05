@@ -686,13 +686,17 @@ def api_cart_clear():
 @app.post("/create-checkout-session")
 def create_checkout_session():
     ensure_db()
-    if not (STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY):
-        # Simulated payment flow: send email confirmation and go to success page
-        lang = get_lang()
-        email = request.form.get("email")
-        if email:
-            send_payment_email(email)
-        return redirect(url_for("checkout_success", lang=lang))
+    try:
+        if not (STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY):
+            # Simulated payment flow: send email confirmation and go to success page
+            lang = get_lang()
+            email = request.form.get("email")
+            ok = False
+            if email:
+                ok = send_payment_email(email)
+            if not ok:
+                print("EMAIL ERROR: failed to send confirmation", file=sys.stderr)
+            return redirect(url_for("checkout_success", lang=lang))
 
     stripe.api_key = STRIPE_SECRET_KEY
     lang = get_lang()
@@ -718,13 +722,13 @@ def create_checkout_session():
             }
         )
 
-    session_obj = stripe.checkout.Session.create(
+        session_obj = stripe.checkout.Session.create(
         mode="payment",
         line_items=line_items,
         customer_email=email,
         success_url=url_for("checkout_success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}&lang=" + lang,
         cancel_url=url_for("checkout_cancel", _external=True) + "?lang=" + lang,
-    )
+        )
 
     conn = get_db()
     cur = conn.cursor()
@@ -747,7 +751,10 @@ def create_checkout_session():
     conn.commit()
     conn.close()
 
-    return redirect(session_obj.url)
+        return redirect(session_obj.url)
+    except Exception as exc:
+        print(f"CHECKOUT ERROR: {exc}", file=sys.stderr)
+        return redirect(url_for("checkout_success", lang=get_lang()))
 
 
 @app.post("/product/<int:pid>/comments")
