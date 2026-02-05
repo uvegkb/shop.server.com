@@ -6,11 +6,14 @@ from typing import Dict, List
 import stripe
 import smtplib
 import sys
+import threading
 from email.message import EmailMessage
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify, abort, flash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "shop.db")
+DB_INIT_LOCK = threading.Lock()
+DB_INITIALIZED = False
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
@@ -487,6 +490,17 @@ def init_db():
     conn.close()
 
 
+def ensure_db():
+    global DB_INITIALIZED
+    if DB_INITIALIZED:
+        return
+    with DB_INIT_LOCK:
+        if DB_INITIALIZED:
+            return
+        init_db()
+        DB_INITIALIZED = True
+
+
 def get_lang():
     lang = request.args.get("lang") or session.get("lang") or "ar"
     if lang not in ("ar", "en"):
@@ -562,6 +576,7 @@ def cart_items():
 
 @app.route("/")
 def index():
+    ensure_db()
     lang = get_lang()
     products = fetch_products()
     return render_template(
@@ -575,6 +590,7 @@ def index():
 
 @app.route("/product/<int:pid>")
 def product(pid: int):
+    ensure_db()
     lang = get_lang()
     sid = get_session_id()
     item = fetch_product(pid)
@@ -594,6 +610,7 @@ def product(pid: int):
 
 @app.route("/cart")
 def cart():
+    ensure_db()
     lang = get_lang()
     items, total_cents = cart_items()
     return render_template(
@@ -609,6 +626,7 @@ def cart():
 
 @app.route("/checkout")
 def checkout():
+    ensure_db()
     lang = get_lang()
     items, total_cents = cart_items()
     return render_template(
@@ -626,6 +644,7 @@ def checkout():
 
 @app.post("/api/cart/add")
 def api_cart_add():
+    ensure_db()
     data = request.get_json(silent=True) or {}
     pid = str(data.get("product_id"))
     qty = int(data.get("qty", 1))
@@ -640,6 +659,7 @@ def api_cart_add():
 
 @app.post("/api/cart/remove")
 def api_cart_remove():
+    ensure_db()
     data = request.get_json(silent=True) or {}
     pid = str(data.get("product_id"))
     cart = get_cart()
@@ -651,12 +671,14 @@ def api_cart_remove():
 
 @app.post("/api/cart/clear")
 def api_cart_clear():
+    ensure_db()
     set_cart({})
     return jsonify({"ok": True, "count": 0})
 
 
 @app.post("/create-checkout-session")
 def create_checkout_session():
+    ensure_db()
     if not (STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY):
         # Simulated payment flow: send email confirmation and go to success page
         lang = get_lang()
@@ -780,6 +802,7 @@ def delete_comment(cid: int):
 
 @app.route("/success")
 def checkout_success():
+    ensure_db()
     lang = get_lang()
     set_cart({})
     return render_template("success.html", lang=lang, t=TEXT[lang])
@@ -787,12 +810,14 @@ def checkout_success():
 
 @app.route("/cancel")
 def checkout_cancel():
+    ensure_db()
     lang = get_lang()
     return render_template("cancel.html", lang=lang, t=TEXT[lang])
 
 
 @app.post("/webhook")
 def stripe_webhook():
+    ensure_db()
     if not STRIPE_WEBHOOK_SECRET:
         return "", 400
 
