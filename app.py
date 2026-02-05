@@ -497,7 +497,11 @@ def ensure_db():
     with DB_INIT_LOCK:
         if DB_INITIALIZED:
             return
-        init_db()
+        try:
+            init_db()
+        except Exception as exc:
+            print(f"DB INIT ERROR: {exc}", file=sys.stderr)
+            raise
         DB_INITIALIZED = True
 
 
@@ -518,6 +522,7 @@ def get_session_id() -> str:
 
 
 def fetch_products() -> List[sqlite3.Row]:
+    ensure_db()
     conn = get_db()
     cur = conn.cursor()
     cur.execute("SELECT * FROM products")
@@ -527,6 +532,7 @@ def fetch_products() -> List[sqlite3.Row]:
 
 
 def fetch_product(pid: int):
+    ensure_db()
     conn = get_db()
     cur = conn.cursor()
     cur.execute("SELECT * FROM products WHERE id = ?", (pid,))
@@ -557,6 +563,7 @@ def set_cart(cart: Dict[str, int]):
 
 
 def cart_items():
+    ensure_db()
     cart = get_cart()
     items = []
     total_cents = 0
