@@ -692,12 +692,14 @@ def api_cart_clear():
 def create_checkout_session():
     ensure_db()
     try:
+        print("CHECKOUT: start", file=sys.stderr)
         if not (STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY):
             # Simulated payment flow: send email confirmation and go to success page
             lang = get_lang()
             email = request.form.get("email")
             if email:
                 send_payment_email_async(email)
+            print("CHECKOUT: simulated -> success", file=sys.stderr)
             return redirect(url_for("checkout_success", lang=lang))
         stripe.api_key = STRIPE_SECRET_KEY
         lang = get_lang()
@@ -752,6 +754,7 @@ def create_checkout_session():
         conn.commit()
         conn.close()
 
+        print("CHECKOUT: stripe -> redirect", file=sys.stderr)
         return redirect(session_obj.url)
     except Exception as exc:
         print(f"CHECKOUT ERROR: {exc}", file=sys.stderr)
